@@ -1,0 +1,40 @@
+import { body } from "express-validator";
+
+export const productValidation = [
+  body("name")
+    .trim()
+    .escape()
+    .notEmpty()
+    .withMessage("Name is required")
+    .isLength({ min: 2 })
+    .withMessage("Name must be at least 2 characters"),
+
+  body("price")
+    .notEmpty()
+    .withMessage("Price is required")
+    .isNumeric()
+    .withMessage("Price must be a number")
+    .custom((value) => value > 0)
+    .withMessage("Price must be greater than 0"),
+
+  body("category")
+    .trim()
+    .escape()
+    .notEmpty()
+    .withMessage("Category is required"),
+
+  body("stock")
+    .notEmpty()
+    .withMessage("Stock is required")
+    .isInt({ min: 0 })
+    .withMessage(
+      "Stock must be an integer greater than or equal to 0"
+    ),
+
+  body("description")
+    .optional()
+    .trim()
+    .escape()
+    .isLength({ max: 500 })
+    .withMessage("Description must not exceed 500 characters"),
+];
