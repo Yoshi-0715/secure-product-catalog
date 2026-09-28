@@ -1,13 +1,16 @@
-import { Router } from "express";
+import { Router, Request, Response } from "express";
+
 import { validationResult } from "express-validator";
+
 import { products } from "../data/products";
+
 import { productValidation } from "../validators/product.validator";
 
 const router = Router();
 
 // GET all products
 router.get("/", (req, res) => {
-  res.status(200).json({
+  return res.status(200).json({
     success: true,
     data: products,
   });
@@ -35,64 +38,79 @@ router.get("/:id", (req, res) => {
 });
 
 // POST create a new product
-router.post("/", productValidation, (req, res) => {
-  const errors = validationResult(req);
+router.post(
+  "/",
+  productValidation,
+  (req: Request, res: Response) => {
+    const errors = validationResult(req);
 
-  if (!errors.isEmpty()) {
-    return res.status(422).json({
-      success: false,
-      errors: errors.array(),
+    if (!errors.isEmpty()) {
+      return res.status(422).json({
+        success: false,
+        message: "Validation failed",
+        errors: errors.array(),
+      });
+    }
+
+    const newId =
+      products.length > 0
+        ? Math.max(...products.map((product) => product.id)) + 1
+        : 1;
+
+    const newProduct = {
+      id: newId,
+      ...req.body,
+    };
+
+    products.push(newProduct);
+
+    return res.status(201).json({
+      success: true,
+      data: newProduct,
     });
   }
-
-  const newProduct = {
-    id: products.length + 1,
-    ...req.body,
-  };
-
-  products.push(newProduct);
-
-  res.status(201).json({
-    success: true,
-    data: newProduct,
-  });
-});
+);
 
 // PUT update a product
-router.put("/:id", productValidation, (req, res) => {
-  const productId = Number(req.params.id);
+router.put(
+  "/:id",
+  productValidation,
+  (req: Request, res: Response) => {
+    const productId = Number(req.params.id);
 
-  const productIndex = products.findIndex(
-    (product) => product.id === productId
-  );
+    const productIndex = products.findIndex(
+      (product) => product.id === productId
+    );
 
-  if (productIndex === -1) {
-    return res.status(404).json({
-      success: false,
-      message: "Product not found",
+    if (productIndex === -1) {
+      return res.status(404).json({
+        success: false,
+        message: "Product not found",
+      });
+    }
+
+    const errors = validationResult(req);
+
+    if (!errors.isEmpty()) {
+      return res.status(422).json({
+        success: false,
+        message: "Validation failed",
+        errors: errors.array(),
+      });
+    }
+
+    products[productIndex] = {
+      ...products[productIndex],
+      ...req.body,
+      id: productId,
+    };
+
+    return res.status(200).json({
+      success: true,
+      data: products[productIndex],
     });
   }
-
-  const errors = validationResult(req);
-
-  if (!errors.isEmpty()) {
-    return res.status(422).json({
-      success: false,
-      errors: errors.array(),
-    });
-  }
-
-  products[productIndex] = {
-    ...products[productIndex],
-    ...req.body,
-    id: productId,
-  };
-
-  res.status(200).json({
-    success: true,
-    data: products[productIndex],
-  });
-});
+);
 
 // DELETE a product
 router.delete("/:id", (req, res) => {
